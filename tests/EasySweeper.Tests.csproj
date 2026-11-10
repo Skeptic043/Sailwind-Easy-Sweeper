@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>EasySweeper.Tests</RootNamespace>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- Same overridable locations as src/EasySweeper.csproj. -->
+  <PropertyGroup>
+    <SailwindManaged Condition="'$(SailwindManaged)' == ''">C:\Steam Games\steamapps\common\Sailwind\Sailwind_Data\Managed</SailwindManaged>
+    <BepInExCore Condition="'$(BepInExCore)' == ''">$(LOCALAPPDATA)\SailwindModSynchronizer\packs\default\instance\BepInEx\core</BepInExCore>
+    <PluginOutput>$(MSBuildThisFileDirectory)..\src\bin\$(Configuration)\netstandard2.0\EasySweeper.dll</PluginOutput>
+  </PropertyGroup>
+
+  <!-- The timing rule under test is shared with the plugin, not copied. -->
+  <ItemGroup>
+    <Compile Include="..\src\StrokeTimer.cs" Link="Shared\StrokeTimer.cs" />
+  </ItemGroup>
+
+  <!-- Build the plugin first so its DLL can be inspected. Nothing from it is referenced. -->
+  <ItemGroup>
+    <ProjectReference Include="..\src\EasySweeper.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
+  </ItemGroup>
+
+  <!-- Mono.Cecil comes from the BepInEx install; it is copied only into this test's bin folder. -->
+  <ItemGroup>
+    <Reference Include="Mono.Cecil">
+      <HintPath>$(BepInExCore)\Mono.Cecil.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>SailwindManaged</_Parameter1>
+      <_Parameter2>$(SailwindManaged)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>PluginOutput</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(PluginOutput)'))</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>
