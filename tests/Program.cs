@@ -35,26 +35,36 @@ namespace EasySweeper.Tests
 
         private static void StrokeTiming()
         {
-            float s = StrokeTimer.StrokeSeconds;
-            float next = 0f;
+            float s = StrokeTimer.StrokeSeconds(75, 1f);
+            float next = float.NegativeInfinity;
 
             // The native press queues the first stroke; the timer starts from it.
-            Check("press: no extra request", !StrokeTimer.ShouldRequest(true, 10f, ref next));
-            Check("press: next stroke one interval later", Math.Abs(next - (10f + s)) < 1e-4f);
+            Check("press: no extra request", !StrokeTimer.ShouldRequest(true, 10f, s, ref next));
+            Check("press: stroke starts now", next == 10f);
 
-            Check("held mid-stroke: no request", !StrokeTimer.ShouldRequest(false, 10f + s * 0.5f, ref next));
-            Check("held after interval: request", StrokeTimer.ShouldRequest(false, 10f + s, ref next));
-            Check("after request: timer restarts", Math.Abs(next - (10f + 2f * s)) < 1e-4f);
-            Check("same frame again: no duplicate", !StrokeTimer.ShouldRequest(false, 10f + s, ref next));
+            Check("held mid-stroke: no request", !StrokeTimer.ShouldRequest(false, 10f + s * 0.5f, s, ref next));
+            Check("held after interval: request", StrokeTimer.ShouldRequest(false, 10f + s, s, ref next));
+            Check("after request: timer restarts", next == 10f + s);
+            Check("same frame again: no duplicate", !StrokeTimer.ShouldRequest(false, 10f + s, s, ref next));
+
+            // A live change to a shorter stroke applies to the stroke already under way.
+            float shorter = StrokeTimer.StrokeSeconds(50, 1f);
+            Check("live shorter stroke: request at the new length",
+                StrokeTimer.ShouldRequest(false, next + shorter, shorter, ref next));
 
             // Our own request is still queued on the next call if the game hasn't consumed it yet.
-            Check("queued request: no duplicate", !StrokeTimer.ShouldRequest(true, 10f + 2f * s, ref next));
+            Check("queued request: no duplicate", !StrokeTimer.ShouldRequest(true, next + s, s, ref next));
 
             // A long gap (button released, then held again without a fresh press) requests at once.
-            Check("held after long gap: request", StrokeTimer.ShouldRequest(false, 100f, ref next));
+            Check("held after long gap: request", StrokeTimer.ShouldRequest(false, 100f, s, ref next));
 
-            Check("interval is 75% of the native stroke (ln 4 / 5)",
-                Math.Abs(s - Math.Log(4) / 5) < 0.005);
+            // The ease covers 1 - e^(-rate * t) of the way, so reaching a fraction f takes -ln(1 - f) / rate.
+            Check("75% of the native stroke takes ln 4 / 5", Math.Abs(s - Math.Log(4) / 5) < 1e-4);
+            Check("50% of the native stroke takes ln 2 / 5",
+                Math.Abs(StrokeTimer.StrokeSeconds(50, 1f) - Math.Log(2) / 5) < 1e-4);
+            Check("3x sweep speed reaches the same point in a third of the time",
+                Math.Abs(StrokeTimer.StrokeSeconds(75, 3f) - s / 3f) < 1e-4);
+            Check("longer strokes take longer", StrokeTimer.StrokeSeconds(95, 1f) > s);
         }
 
         // ---- installed game -------------------------------------------------------
@@ -99,6 +109,14 @@ namespace EasySweeper.Tests
                     Field(m, "Cleaner", "activated") is FieldDefinition a && a.IsPublic && a.FieldType.FullName == "System.Boolean");
                 Check("ShipItem.sold is a public bool field",
                     Field(m, "ShipItem", "sold") is FieldDefinition s && s.IsPublic && s.FieldType.FullName == "System.Boolean");
+
+                // SweepSpeed rewrites the swing's two Time.deltaTime * 5 rates and nothing else.
+                MethodDefinition cleanerLate = m.GetType("Cleaner")?.Methods.SingleOrDefault(x => x.Name == "LateUpdate" && !x.HasParameters);
+                var ops = cleanerLate?.HasBody == true ? cleanerLate.Body.Instructions.ToList() : new List<Instruction>();
+                int rates = Enumerable.Range(1, Math.Max(0, ops.Count - 1)).Count(i =>
+                    ops[i - 1].Operand is MethodReference r && r.Name == "get_deltaTime" && r.DeclaringType.Name == "Time"
+                    && ops[i].OpCode == OpCodes.Ldc_R4 && (float)ops[i].Operand == StrokeTimer.NativeRate);
+                Check("Cleaner.LateUpdate eases the swing at Time.deltaTime * 5 exactly twice", rates == 2);
             }
         }
 

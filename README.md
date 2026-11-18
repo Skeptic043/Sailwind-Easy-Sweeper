@@ -18,6 +18,15 @@ Install Easy Sweeper through [Sailwind Mod Synchronizer](https://github.com/foxy
 
 While holding a broom, press and hold the use button in order to sweep your boat back to its former glory. No repeated button presses necessary.
 
+## Configuration
+
+After the first launch with the mod installed, settings can be adjusted in `BepInEx/config/com.skeptic043.sailwind.easysweeper.cfg`, or they can be adjusted in game with the [BepInEx 5 version of Configuration Manager](https://github.com/BepInEx/BepInEx.ConfigurationManager). Changes made in Configuration Manager apply immediately.
+
+| Setting | Default | Options |
+| --- | --- | --- |
+| `StrokeLength` | `75` | Sets how far the broom travels while you hold the use button, from `25` to `95` percent of a full stroke. |
+| `SweepSpeed` | `1` | Sets the broom swing speed from `1` to `3`. |
+
 ## Compatibility
 
 No known incompatibilities.

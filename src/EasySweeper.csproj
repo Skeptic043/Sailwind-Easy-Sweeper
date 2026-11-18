@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>EasySweeper</AssemblyName>
     <RootNamespace>EasySweeper</RootNamespace>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Product>Easy Sweeper</Product>
     <Description>Hold the use button to keep sweeping with the broom.</Description>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>

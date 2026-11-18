@@ -28,7 +28,7 @@ Use the paths for your own installation or mod profile. The output is `src/bin/R
 dotnet run --project tests -c Release -p:SailwindManaged='C:\Games\Sailwind\Sailwind_Data\Managed' -p:BepInExCore='C:\Games\Sailwind\BepInEx\core'
 ```
 
-The checks cover the stroke timing, confirm the game members the patch relies on still exist in your installed `Assembly-CSharp.dll`, and check the built plugin's identity. Any failure makes the command fail.
+The checks cover the stroke timing, confirm the game members and the broom swing code the patches rely on still exist in your installed `Assembly-CSharp.dll`, and check the built plugin's identity. Any failure makes the command fail.
 
 ## Package
 
