@@ -16,7 +16,7 @@ namespace EasySweeper
     {
         public const string Guid = "com.skeptic043.sailwind.easysweeper";
         public const string PluginName = "Easy Sweeper";
-        public const string Version = "0.1.1";
+        public const string Version = "0.1.2";
 
         private const string Section = "Sweeping";
 
@@ -26,6 +26,13 @@ namespace EasySweeper
         private static AccessTools.FieldRef<ShipItemBroom, Cleaner> cleanerRef;
         private static float strokeStart = float.NegativeInfinity;
         private static bool swingPatched;
+
+        /// <summary>
+        /// Where the game rests the bristle bone, and how far it may drift before it counts as stranded.
+        /// Normal drag keeps it within about 0.7 m of the head.
+        /// </summary>
+        private static readonly Vector3 BristleRest = new Vector3(0f, -0.5f, 0f);
+        private const float StrandedDistance = 1.5f;
 
         private void Awake()
         {
@@ -57,15 +64,29 @@ namespace EasySweeper
                 Logger.LogError("Easy Sweeper could not patch the game and is inactive: " + e.Message);
             }
 
+            MethodInfo cleanerLateUpdate = AccessTools.Method(typeof(Cleaner), "LateUpdate", Type.EmptyTypes);
+            if (cleanerLateUpdate == null)
+            {
+                Logger.LogWarning("Cleaner.LateUpdate() was not found, so SweepSpeed and the broom visibility fix are unavailable.");
+                return;
+            }
+
             try
             {
-                MethodInfo cleanerLateUpdate = AccessTools.Method(typeof(Cleaner), "LateUpdate", Type.EmptyTypes)
-                    ?? throw new MissingMethodException("Cleaner.LateUpdate() was not found.");
                 harmony.Patch(cleanerLateUpdate, transpiler: new HarmonyMethod(typeof(Plugin), nameof(Transpiler)));
             }
             catch (Exception e)
             {
                 Logger.LogWarning("SweepSpeed is unavailable and the broom swings at normal speed: " + e.Message);
+            }
+
+            try
+            {
+                harmony.Patch(cleanerLateUpdate, postfix: new HarmonyMethod(typeof(Plugin), nameof(CleanerPostfix)));
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning("The broom visibility fix is unavailable: " + e.Message);
             }
         }
 
@@ -86,6 +107,30 @@ namespace EasySweeper
             if (StrokeTimer.ShouldRequest(cleaner.activated, Time.time, seconds, ref strokeStart))
                 cleaner.activated = true;
         }
+
+        /// <summary>
+        /// The held broom is a skinned mesh culled by its bristle bone, which chases a drag point the game
+        /// keeps in the current boat's space. If that bone drifts far away or its position turns into NaN,
+        /// the whole held broom stops drawing. Put a stranded bone back where the game rests it.
+        /// </summary>
+        private static void CleanerPostfix(Cleaner __instance, ShipItem ___item, Rigidbody ___bone, ref Vector3 ___lastBoatPaintPos)
+        {
+            if (!___item.held)
+                return;
+
+            Transform bristles = ___bone.transform;
+            Vector3 head = __instance.transform.position;
+            Vector3 bone = bristles.position;
+            if (IsFinite(bone) && (bone - head).sqrMagnitude <= StrandedDistance * StrandedDistance)
+                return;
+
+            bristles.localPosition = BristleRest;
+            ___lastBoatPaintPos = GameState.currentBoat ? GameState.currentBoat.InverseTransformPoint(head) : head;
+        }
+
+        private static bool IsFinite(Vector3 v) =>
+            !float.IsNaN(v.x) && !float.IsNaN(v.y) && !float.IsNaN(v.z)
+            && !float.IsInfinity(v.x) && !float.IsInfinity(v.y) && !float.IsInfinity(v.z);
 
         // The held stroke timing follows the swing only when the swing was actually sped up.
         private static float SwingSpeed => swingPatched ? sweepSpeed.Value : 1f;

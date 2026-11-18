@@ -110,6 +110,14 @@ namespace EasySweeper.Tests
                 Check("ShipItem.sold is a public bool field",
                     Field(m, "ShipItem", "sold") is FieldDefinition s && s.IsPublic && s.FieldType.FullName == "System.Boolean");
 
+                // The visibility fix resets the bristle bone and the drag point it chases.
+                Check("Cleaner.bone is a private Rigidbody field",
+                    Field(m, "Cleaner", "bone") is FieldDefinition bone && bone.IsPrivate && bone.FieldType.FullName == "UnityEngine.Rigidbody");
+                Check("Cleaner.item is a private ShipItem field",
+                    Field(m, "Cleaner", "item") is FieldDefinition it && it.IsPrivate && it.FieldType.FullName == "ShipItem");
+                Check("Cleaner.lastBoatPaintPos is a private Vector3 field",
+                    Field(m, "Cleaner", "lastBoatPaintPos") is FieldDefinition drag && drag.IsPrivate && drag.FieldType.FullName == "UnityEngine.Vector3");
+
                 // SweepSpeed rewrites the swing's two Time.deltaTime * 5 rates and nothing else.
                 MethodDefinition cleanerLate = m.GetType("Cleaner")?.Methods.SingleOrDefault(x => x.Name == "LateUpdate" && !x.HasParameters);
                 var ops = cleanerLate?.HasBody == true ? cleanerLate.Body.Instructions.ToList() : new List<Instruction>();
@@ -152,9 +160,12 @@ namespace EasySweeper.Tests
                 string[] banned = { "StartCoroutine", "FindObjectOfType", "FindObjectsOfType", "AddComponent" };
                 Check("no coroutines, object searches or added components", !calls.Any(banned.Contains));
 
-                MethodDefinition postfix = methods.SingleOrDefault(x => x.Name == "Postfix");
-                Check("postfix has no logging", postfix != null && !postfix.Body.Instructions
-                    .Select(i => i.Operand).OfType<MethodReference>().Any(r => r.DeclaringType.Name.Contains("Log")));
+                foreach (string name in new[] { "Postfix", "CleanerPostfix" })
+                {
+                    MethodDefinition postfix = methods.SingleOrDefault(x => x.Name == name);
+                    Check(name + " has no logging", postfix != null && !postfix.Body.Instructions
+                        .Select(i => i.Operand).OfType<MethodReference>().Any(r => r.DeclaringType.Name.Contains("Log")));
+                }
             }
         }
 
