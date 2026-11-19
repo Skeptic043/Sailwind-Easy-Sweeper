@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- Increased the maximum `SweepSpeed` from `3` to `10`
+
 ## 0.1.2
 
 - Fixed the held broom sometimes disappearing after sweeping for a bit

@@ -25,7 +25,7 @@ After the first launch with the mod installed, settings can be adjusted in `BepI
 | Setting | Default | Options |
 | --- | --- | --- |
 | `StrokeLength` | `75` | Sets how far the broom travels while you hold the use button, from `25` to `95` percent of a full stroke. |
-| `SweepSpeed` | `1` | Sets the broom swing speed from `1` to `3`. |
+| `SweepSpeed` | `1` | Sets the broom swing speed from `1` to `10`. |
 
 ## Compatibility
 

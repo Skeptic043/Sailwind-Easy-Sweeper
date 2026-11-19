@@ -16,7 +16,7 @@ namespace EasySweeper
     {
         public const string Guid = "com.skeptic043.sailwind.easysweeper";
         public const string PluginName = "Easy Sweeper";
-        public const string Version = "0.1.2";
+        public const string Version = "0.1.3";
 
         private const string Section = "Sweeping";
 
@@ -42,9 +42,9 @@ namespace EasySweeper
                 + "Lower values give shorter, quicker strokes.",
                 new AcceptableValueRange<int>(25, 95)));
             sweepSpeed = Config.Bind(Section, "SweepSpeed", 1f, new ConfigDescription(
-                "How fast the broom swings, for both held and clicked strokes. 1 is the normal game speed, "
-                + "2 is twice as fast and 3 is three times as fast.",
-                new AcceptableValueRange<float>(1f, 3f)));
+                "How fast the broom swings, for both held and clicked strokes. Values from 1 to 10 "
+                + "multiply the normal game speed.",
+                new AcceptableValueRange<float>(1f, 10f)));
 
             var harmony = new Harmony(Guid);
             try

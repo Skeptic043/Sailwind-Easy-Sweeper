@@ -62,8 +62,8 @@ namespace EasySweeper.Tests
             Check("75% of the native stroke takes ln 4 / 5", Math.Abs(s - Math.Log(4) / 5) < 1e-4);
             Check("50% of the native stroke takes ln 2 / 5",
                 Math.Abs(StrokeTimer.StrokeSeconds(50, 1f) - Math.Log(2) / 5) < 1e-4);
-            Check("3x sweep speed reaches the same point in a third of the time",
-                Math.Abs(StrokeTimer.StrokeSeconds(75, 3f) - s / 3f) < 1e-4);
+            Check("10x sweep speed reaches the same point in a tenth of the time",
+                Math.Abs(StrokeTimer.StrokeSeconds(75, 10f) - s / 10f) < 1e-4);
             Check("longer strokes take longer", StrokeTimer.StrokeSeconds(95, 1f) > s);
         }
 
